@@ -9,9 +9,9 @@ var io = require("socket.io")(server, {
     origin: "*",
   },
 });
-server.listen(443, () => {
-  console.log("Server đang chay tren cong 443");
-});
+server.listen();
+
+console.log("Server dang chay o cong: " + server.address().port);
 
 const video = {};
 const meta = {};
