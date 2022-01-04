@@ -1,0 +1,2 @@
+run:
+  web: nodemon server.js
