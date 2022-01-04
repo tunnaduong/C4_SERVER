@@ -9,7 +9,7 @@ var io = require("socket.io")(server, {
     origin: "*",
   },
 });
-server.listen();
+server.listen(process.env.PORT || 2003);
 
 console.log("Server dang chay o cong: " + server.address().port);
 
