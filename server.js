@@ -22,10 +22,10 @@ const meta = {};
 
 video["video_ids"] = new Array(
   "KypuJGsZ8pQ"
-  // "UVbv-PJXm14",
-  // "PNhYz6RmIr4",
-  // "hTGcMk_QXEg",
-  // "ixdSsW5n2rI"
+  "UVbv-PJXm14",
+  "PNhYz6RmIr4",
+  "hTGcMk_QXEg",
+  "ixdSsW5n2rI"
 );
 video["total_videos"] = video["video_ids"].length;
 video["now_playing"] = 0;
