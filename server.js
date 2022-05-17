@@ -2,6 +2,7 @@ var express = require("express");
 var moment = require("moment");
 var duration = require("moment-duration-format");
 const axios = require("axios");
+const { response } = require("express");
 var app = express();
 var server = require("http").Server(app);
 var io = require("socket.io")(server, {
@@ -13,28 +14,27 @@ var io = require("socket.io")(server, {
 var server_port = process.env.YOUR_PORT || process.env.PORT || 80;
 var server_host = process.env.YOUR_HOST || "0.0.0.0";
 server.listen(server_port, server_host, function () {
-  console.log("Listening on port %d", server_port);
+  console.log("Server dang mo tai cong %d", server_port);
 });
 
 const video = {};
 const meta = {};
 
-video["playlist_name"] = "Live 01";
-video["total_videos"] = 5;
 video["video_ids"] = new Array(
-  "KypuJGsZ8pQ",
-  "UVbv-PJXm14",
-  "PNhYz6RmIr4",
-  "hTGcMk_QXEg",
-  "ixdSsW5n2rI"
+  "KypuJGsZ8pQ"
+  // "UVbv-PJXm14",
+  // "PNhYz6RmIr4",
+  // "hTGcMk_QXEg",
+  // "ixdSsW5n2rI"
 );
+video["total_videos"] = video["video_ids"].length;
 video["now_playing"] = 0;
 function getMeta() {
   axios
     .get(
       "https://www.googleapis.com/youtube/v3/videos?id=" +
         video["video_ids"][video["now_playing"]] +
-        "&key=AIzaSyD14m2Lz-oKztYbjQC8y4nbDmp9aBys2bc&part=contentDetails,snippet"
+        "&key=AIzaSyC9ebtzLwLdMmdSM9pMAHTm8FHTRLuF20g&part=contentDetails"
     )
     .then(function (response) {
       video["current_video_duration"] = moment
@@ -42,6 +42,17 @@ function getMeta() {
         .format("s");
     });
 }
+
+async function getSnippet(id) {
+  const response = await axios.get(
+    "https://www.googleapis.com/youtube/v3/videos?part=snippet&id=" +
+      id +
+      "&key=AIzaSyC9ebtzLwLdMmdSM9pMAHTm8FHTRLuF20g"
+  );
+
+  return response.data.items[0].snippet.title;
+}
+
 getMeta();
 video["elapsed_time"] = 0;
 
@@ -61,29 +72,36 @@ setInterval(() => {
   }
 }, 1000);
 
-video["video_in_queue"] = [meta];
+global.queue = [];
 
 for (const vid of video["video_ids"]) {
-  let index = video["video_ids"].indexOf(vid);
-  meta["id"] = index;
-  meta["video_id"] = vid;
-
-  console.log();
-
-  axios
-    .get(
-      "https://www.googleapis.com/youtube/v3/videos?id=" +
-        vid +
-        "&key=AIzaSyD14m2Lz-oKztYbjQC8y4nbDmp9aBys2bc&part=contentDetails,snippet"
-    )
-    .then(function (response) {
-      meta["title"] = response.data.items[0].snippet.title;
-    });
+  const index = video["video_ids"].indexOf(vid);
+  queue.push([
+    index,
+    vid,
+    function () {
+      return function () {
+        getSnippet(vid).then((data) => {
+          return data;
+        });
+      };
+    },
+  ]);
 }
 
-app.get("/live", function (req, res) {
-  res.json(video);
-});
+var length = queue.length,
+  json = [];
+
+for (var i = 0; i < length; i++) {
+  var subArray = queue[i];
+  item = {
+    id: subArray[0],
+    video_id: subArray[1],
+    video_title: subArray[2],
+  };
+  json.push(item);
+}
+video["video_in_queue"] = json;
 
 io.on("connection", function (socket) {
   console.log("Co nguoi vua ket noi " + socket.id);
@@ -92,4 +110,27 @@ io.on("connection", function (socket) {
     console.log(u + ": " + msg);
     io.emit("chat-message", u + "|" + name + "|" + msg);
   });
+
+  socket.on("add-queue", (id) => {
+    console.log("received id: " + id);
+    video["video_ids"].push(id);
+    video["total_videos"]++;
+    queue.push([video["total_videos"] - 1, id]);
+    var length = queue.length,
+      json = [];
+
+    for (var i = 0; i < length; i++) {
+      var subArray = queue[i],
+        item = {
+          id: subArray[0],
+          video_id: subArray[1],
+        };
+      json.push(item);
+    }
+    video["video_in_queue"] = json;
+  });
+});
+
+app.get("/live", function (req, res) {
+  res.json(video);
 });
