@@ -21,7 +21,7 @@ const video = {};
 const meta = {};
 
 video["video_ids"] = new Array(
-  "KypuJGsZ8pQ"
+  "KypuJGsZ8pQ",
   "UVbv-PJXm14",
   "PNhYz6RmIr4",
   "hTGcMk_QXEg",
