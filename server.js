@@ -106,9 +106,13 @@ video["video_in_queue"] = json;
 io.on("connection", function (socket) {
   console.log("Co nguoi vua ket noi " + socket.id);
 
-  socket.on("chat-message", (name, u, msg) => {
-    console.log(u + ": " + msg);
-    io.emit("chat-message", u + "|" + name + "|" + msg);
+  socket.on("chat-message", (data) => {
+    console.log(data.username + ": " + data.message);
+    io.emit("chat-message", {
+      name: data.name,
+      username: data.username,
+      message: data.message,
+    });
   });
 
   socket.on("add-queue", (id) => {
