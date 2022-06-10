@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="/assets/style" />
+    <title>C4K60 Radio Control Panel</title>
+  </head>
+  <body onload="getStatus(); queue()">
+    <h1>C4K60 Live Radio Control Panel</h1>
+    <h3>Welcome, Dương Tùng Anh!</h3>
+    <fieldset style="width: 550px; float: right">
+      <legend>Queue</legend>
+      <div id="queue"></div>
+    </fieldset>
+
+    <fieldset style="width: 550px">
+      <legend>Status</legend>
+      <div id="status"></div>
+    </fieldset>
+
+    <div style="margin: 15px 0">
+      <p style="color: red" id="error" style="display: none"></p>
+    </div>
+    <fieldset style="width: 350px">
+      <legend>Radio control</legend>
+      <br />
+      <button onclick="shuffle()">Shuffle playing songs</button><br /><br />
+      <button onclick="changeSong()">Change playing song</button><br /><br />
+      <button>Forward 10 seconds >></button><br /><br />
+      <button>Rewind 10 seconds <<</button><br /><br />
+      <button>Add song at the top of queue</button><br /><br />
+      <button>Add song at the bottom of queue</button><br /><br />
+      <button>Remove all queued songs</button><br /><br />
+      <button>Disable queue</button><br /><br />
+      <button>Send refresh emission event to users</button><br /><br />
+    </fieldset>
+    <script>
+      function handleAlert(type, msg) {
+        type == "success" || type == "success_html"
+          ? $("#error").css("color", "green")
+          : $("#error").css("color", "red");
+        $("#error").show();
+        $("#error").text(msg);
+        type == "success_html" && $("#error").html(msg);
+        var timer = setTimeout(() => {
+          $("#error").hide();
+        }, 5000);
+        type == "hide" && clearTimeout(timer);
+        type == "hide" && $("#error").hide();
+      }
+
+      function shuffle() {
+        $.get("/admin/api/shuffle", function (data, status) {
+          handleAlert("success", data);
+        }).catch((err) =>
+          handleAlert("error", "Failed1! Error: " + err.status)
+        );
+      }
+
+      function getStatus() {
+        if ($("#status").text() == "") {
+          $("#status").text("Fetching data...");
+        }
+        $.get("/admin/api/status", function (data, status) {
+          $("#status").html(data);
+        });
+      }
+
+      function changeSong() {
+        var videoToPlay = prompt("Type your YouTube video ID here:");
+        if (videoToPlay != "") {
+          $.get(
+            "/admin/api/songs/change/" + videoToPlay,
+            function (data, status) {
+              handleAlert("success_html", data);
+            }
+          ).catch((err) =>
+            handleAlert("error", "Failed3! Error: " + err.status)
+          );
+        } else {
+          handleAlert("error", "Please enter the video ID correctly!");
+        }
+      }
+
+      function queue() {
+        if ($("#queue").text() == "") {
+          $("#queue").text("Fetching data...");
+        }
+        $.get("/admin/api/queue", function (data, status) {
+          $("#queue").html(data);
+        });
+      }
+
+      setInterval(() => {
+        getStatus();
+        queue();
+      }, 1000);
+    </script>
+  </body>
+</html>

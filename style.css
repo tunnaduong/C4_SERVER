@@ -1,0 +1,14 @@
+button {
+  padding: 10px;
+  font-size: 16px;
+  text-align: left;
+}
+
+.minus ul {
+  list-style: none;
+}
+
+.minus li:before {
+  content: "+";
+  margin-right: 4px;
+}
