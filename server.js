@@ -47,7 +47,7 @@ async function getSnippet(id) {
   const response = await axios.get(
     "https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=" +
       id +
-      "&key=AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y"
+      "&key=AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA"
   );
   return response.data;
 }
@@ -56,7 +56,7 @@ async function getChannelAvatar(channel_id) {
   const response = await axios.get(
     "https://youtube.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=" +
       channel_id +
-      "&key=AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y"
+      "&key=AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA"
   );
   return response.data.items[0].snippet.thumbnails.default.url;
 }
@@ -184,7 +184,7 @@ function main(setting) {
       const response = await axios.get(
         "https://www.googleapis.com/youtube/v3/videos?id=" +
           video["video_in_queue"][video["now_playing_position"] - 1] +
-          "&key=AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y&part=contentDetails"
+          "&key=AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA&part=contentDetails"
       );
       return response.data;
     } else {
@@ -193,7 +193,7 @@ function main(setting) {
           video["server_idle_videos_playback_id"][
             video["now_playing_position"] - 1
           ] +
-          "&key=AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y&part=contentDetails"
+          "&key=AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA&part=contentDetails"
       );
       return response.data;
     }
