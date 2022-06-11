@@ -23,11 +23,13 @@
 
     <div style="margin: 15px 0">
       <p style="color: red" id="error" style="display: none"></p>
+      <code style="color: red" id="error_code" style="display: none"></code>
     </div>
     <fieldset style="width: 350px">
       <legend>Radio control</legend>
       <br />
       <button onclick="shuffle()">Shuffle playing songs</button><br /><br />
+      <button onclick="reloadOrder()">Reload song orders</button><br /><br />
       <button onclick="changeSong()">Change playing song</button><br /><br />
       <button>Forward 10 seconds >></button><br /><br />
       <button>Rewind 10 seconds <<</button><br /><br />
@@ -38,16 +40,20 @@
       <button>Send refresh emission event to users</button><br /><br />
     </fieldset>
     <script>
-      function handleAlert(type, msg) {
+      function handleAlert(type, msg, code) {
         type == "success" || type == "success_html"
           ? $("#error").css("color", "green")
           : $("#error").css("color", "red");
-        $("#error").show();
-        $("#error").text(msg);
+        type != "err_code" && $("#error").show();
+        type != "err_code" && $("#error").text(msg);
         type == "success_html" && $("#error").html(msg);
-        var timer = setTimeout(() => {
-          $("#error").hide();
-        }, 5000);
+        if (type != "dont_hide") {
+          var timer = setTimeout(() => {
+            $("#error").hide();
+          }, 5000);
+        }
+        code &&
+          $("#error_code").html(code + "<button>OK, hide it now</button>");
         type == "hide" && clearTimeout(timer);
         type == "hide" && $("#error").hide();
       }
@@ -56,7 +62,7 @@
         $.get("/admin/api/shuffle", function (data, status) {
           handleAlert("success", data);
         }).catch((err) =>
-          handleAlert("error", "Failed1! Error: " + err.status)
+          handleAlert("error", "Failed!! Error: " + err.status)
         );
       }
 
@@ -78,11 +84,23 @@
               handleAlert("success_html", data);
             }
           ).catch((err) =>
-            handleAlert("error", "Failed3! Error: " + err.status)
+            handleAlert("error", "Failed!! Error: " + err.status)
           );
         } else {
           handleAlert("error", "Please enter the video ID correctly!");
         }
+      }
+
+      function reloadOrder() {
+        $.get("/admin/api/songs/reload-order", function (data, status) {
+          handleAlert("success", data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
+        });
       }
 
       function queue() {

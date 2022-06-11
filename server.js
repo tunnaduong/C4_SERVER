@@ -47,7 +47,7 @@ async function getSnippet(id) {
   const response = await axios.get(
     "https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=" +
       id +
-      "&key=AIzaSyC9ebtzLwLdMmdSM9pMAHTm8FHTRLuF20g"
+      "&key=AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y"
   );
   return response.data;
 }
@@ -56,7 +56,7 @@ async function getChannelAvatar(channel_id) {
   const response = await axios.get(
     "https://youtube.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=" +
       channel_id +
-      "&key=AIzaSyC9ebtzLwLdMmdSM9pMAHTm8FHTRLuF20g"
+      "&key=AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y"
   );
   return response.data.items[0].snippet.thumbnails.default.url;
 }
@@ -184,7 +184,7 @@ function main(setting) {
       const response = await axios.get(
         "https://www.googleapis.com/youtube/v3/videos?id=" +
           video["video_in_queue"][video["now_playing_position"] - 1] +
-          "&key=AIzaSyC9ebtzLwLdMmdSM9pMAHTm8FHTRLuF20g&part=contentDetails"
+          "&key=AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y&part=contentDetails"
       );
       return response.data;
     } else {
@@ -193,7 +193,7 @@ function main(setting) {
           video["server_idle_videos_playback_id"][
             video["now_playing_position"] - 1
           ] +
-          "&key=AIzaSyC9ebtzLwLdMmdSM9pMAHTm8FHTRLuF20g&part=contentDetails"
+          "&key=AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y&part=contentDetails"
       );
       return response.data;
     }
@@ -239,7 +239,6 @@ function main(setting) {
       );
     }
   }, 1000);
-
   if (setting == "clear") {
     clearInterval(interval);
     setTimeout(() => {
@@ -250,6 +249,7 @@ function main(setting) {
       video["total_videos"] = video["video_in_queue"].length;
     }, 1700);
   }
+
   setTimeout(() => {
     video["total_videos"] = video["video_in_queue"].length;
   }, 1700);
@@ -316,6 +316,11 @@ setTimeout(() => {
     res.send("Shuffled songs successfully!");
   });
 
+  app.get("/admin/api/songs/reload-order", function (req, res) {
+    main().reloadOrder();
+    res.send("Reloaded song orders successfully!");
+  });
+
   app.get("/admin/api/status", function (req, res) {
     setTimeout(() => {
       res.send(
@@ -374,6 +379,10 @@ setTimeout(() => {
         requestedVideo +
         "</b> has been updated to now playing song!"
     );
+  });
+
+  app.get("/admin/api/ping", function (req, res) {
+    res.send("Server is up");
   });
 
   // always put this code at bottom for 404 handling
