@@ -10,13 +10,14 @@ var io = require("socket.io")(server, {
     origin: "*",
   },
 });
+require("dotenv").config();
 
 const video = {};
 let serverUptime = 0;
 setInterval(() => {
   serverUptime++;
 }, 1000);
-var server_port = process.env.YOUR_PORT || process.env.PORT || 2222;
+var server_port = process.env.YOUR_PORT || process.env.PORT || 6969;
 var server_host = process.env.YOUR_HOST || "0.0.0.0";
 server.listen(server_port, server_host, function () {
   console.log("Server is up and running at port: %d", server_port);
