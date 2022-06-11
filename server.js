@@ -385,6 +385,11 @@ setTimeout(() => {
     res.send("Server is up");
   });
 
+  app.get("/admin/api/server/restart", function (req, res) {
+    res.send("Restarting server...");
+    process.exit(0);
+  });
+
   // always put this code at bottom for 404 handling
   app.get("/*", function (req, res) {
     var requestedUrl = req.protocol + "://" + req.get("Host") + req.url;

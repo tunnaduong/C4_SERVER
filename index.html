@@ -38,6 +38,8 @@
       <button>Remove all queued songs</button><br /><br />
       <button>Disable queue</button><br /><br />
       <button>Send refresh emission event to users</button><br /><br />
+      <button onclick="restart()">(!!!) Restart server</button><br /><br />
+      <button>(!!!) Shutdown server</button><br /><br />
     </fieldset>
     <script>
       function handleAlert(type, msg, code) {
@@ -53,7 +55,9 @@
           }, 5000);
         }
         code &&
-          $("#error_code").html(code + "<button>OK, hide it now</button>");
+          $("#error_code").html(
+            code + `<button onclick='handleAlert("hide")'>OK, I know</button>`
+          );
         type == "hide" && clearTimeout(timer);
         type == "hide" && $("#error").hide();
       }
@@ -109,6 +113,18 @@
         }
         $.get("/admin/api/queue", function (data, status) {
           $("#queue").html(data);
+        });
+      }
+
+      function restart() {
+        $.get("/admin/api/server/restart", (data, status) => {
+          handleAlert("success", data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
         });
       }
 
