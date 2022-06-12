@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/assets/style" />
     <title>C4K60 Radio Control Panel</title>
   </head>
-  <body onload="getStatus(); queue()" class="container">
+  <body class="container">
     <h1>C4K60 Live Radio Control Panel</h1>
     <h3>Welcome, Dương Tùng Anh!</h3>
 
@@ -41,7 +41,13 @@
         </button>
       </div>
       <fieldset
-        style="width: 350px; display: inline-flex; flex-wrap: wrap; gap: 12px"
+        style="
+          width: 350px;
+          display: inline-flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-bottom: 15px;
+        "
       >
         <legend>Radio control</legend>
         <button class="btn btn-default" onclick="shuffle()">
