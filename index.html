@@ -5,61 +5,104 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+    />
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="/assets/style" />
     <title>C4K60 Radio Control Panel</title>
   </head>
-  <body onload="getStatus(); queue()">
+  <body onload="getStatus(); queue()" class="container">
     <h1>C4K60 Live Radio Control Panel</h1>
     <h3>Welcome, Dương Tùng Anh!</h3>
-    <fieldset style="width: 550px; float: right">
+
+    <div style="float: left">
+      <fieldset style="width: 550px">
+        <legend>Status</legend>
+        <div id="status"></div>
+      </fieldset>
+
+      <div style="margin: 15px 0">
+        <p style="color: red; display: none" id="error"></p>
+        <code style="color: red; display: none" id="error_code"></code>
+        <button
+          onclick='handleAlert("hide")'
+          style="display: none"
+          class="btn btn-default"
+        >
+          OK, I know
+        </button>
+      </div>
+      <fieldset
+        style="width: 350px; display: inline-flex; flex-wrap: wrap; gap: 12px"
+      >
+        <legend>Radio control</legend>
+        <button class="btn btn-default" onclick="shuffle()">
+          Shuffle playing songs
+        </button>
+        <button class="btn btn-default" onclick="reloadOrder()">
+          Reload song orders
+        </button>
+        <button class="btn btn-default" onclick="changeSong()">
+          Change playing song
+        </button>
+        <button class="btn btn-default">Forward 10 seconds >></button>
+        <button class="btn btn-default">Rewind 10 seconds <<</button>
+        <button class="btn btn-default">Add song at the top of queue</button>
+        <button class="btn btn-default">Add song at the bottom of queue</button>
+        <button class="btn btn-default">Remove all queued songs</button>
+        <button class="btn btn-default">Disable queue</button>
+        <button class="btn btn-default">
+          Send refresh emission event to users
+        </button>
+        <button class="btn btn-warning" onclick="restart()">
+          (!!) Restart server
+        </button>
+        <button class="btn btn-danger" onclick="shutdown()">
+          (!!!) Shutdown server
+        </button>
+      </fieldset>
+    </div>
+
+    <fieldset style="max-width: 550px; float: right">
       <legend>Queue</legend>
       <div id="queue"></div>
     </fieldset>
 
-    <fieldset style="width: 550px">
-      <legend>Status</legend>
-      <div id="status"></div>
-    </fieldset>
-
-    <div style="margin: 15px 0">
-      <p style="color: red" id="error" style="display: none"></p>
-      <code style="color: red" id="error_code" style="display: none"></code>
-    </div>
-    <fieldset style="width: 350px">
-      <legend>Radio control</legend>
-      <br />
-      <button onclick="shuffle()">Shuffle playing songs</button><br /><br />
-      <button onclick="reloadOrder()">Reload song orders</button><br /><br />
-      <button onclick="changeSong()">Change playing song</button><br /><br />
-      <button>Forward 10 seconds >></button><br /><br />
-      <button>Rewind 10 seconds <<</button><br /><br />
-      <button>Add song at the top of queue</button><br /><br />
-      <button>Add song at the bottom of queue</button><br /><br />
-      <button>Remove all queued songs</button><br /><br />
-      <button>Disable queue</button><br /><br />
-      <button>Send refresh emission event to users</button><br /><br />
-      <button onclick="restart()">(!!!) Restart server</button><br /><br />
-      <button>(!!!) Shutdown server</button><br /><br />
-    </fieldset>
     <script>
       function handleAlert(type, msg, code) {
         type == "success" || type == "success_html"
           ? $("#error").css("color", "green")
           : $("#error").css("color", "red");
-        type != "err_code" && $("#error").show();
-        type != "err_code" && $("#error").text(msg);
-        type == "success_html" && $("#error").html(msg);
-        if (type != "dont_hide") {
-          var timer = setTimeout(() => {
-            $("#error").hide();
-          }, 5000);
+        if (!code) {
+          $("#error").show();
+          $("#error").html(
+            msg +
+              `<br><br><button onclick='handleAlert("hide")' class="btn btn-default">OK, I know</button>`
+          );
+        } else {
+          $("#error").show();
+          $("#error_code").show();
+          $("#error").text(msg);
         }
+        type == "success_html" && $("#error").html(msg + ``);
         code &&
           $("#error_code").html(
-            code + `<button onclick='handleAlert("hide")'>OK, I know</button>`
+            code +
+              `<button onclick='handleAlert("hide")' class="btn btn-default">OK, I know</button>`
           );
-        type == "hide" && clearTimeout(timer);
-        type == "hide" && $("#error").hide();
+        if (type == "hide") {
+          $("#error").hide();
+          $("#error_code").hide();
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
 
       function shuffle() {
@@ -126,6 +169,26 @@
             err.responseText
           );
         });
+      }
+
+      function shutdown() {
+        if (
+          confirm(
+            "Are you sure you want to shutdown the server? Note that this action will destroy all activity including live radio and live chat functions."
+          )
+        ) {
+          $.get("/admin/api/server/shutdown", (data, status) => {
+            handleAlert("success", data);
+          }).catch((err) => {
+            handleAlert(
+              "dont_hide",
+              "Failed! Error: " +
+                err.status +
+                ". Server response with message: ",
+              err.responseText
+            );
+          });
+        }
       }
 
       setInterval(() => {

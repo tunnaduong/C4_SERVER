@@ -11,6 +11,7 @@ var io = require("socket.io")(server, {
   },
 });
 require("dotenv").config();
+var exec = require("child_process").exec;
 
 const video = {};
 let serverUptime = 0;
@@ -22,6 +23,8 @@ var server_host = process.env.YOUR_HOST || "0.0.0.0";
 server.listen(server_port, server_host, function () {
   console.log("Server is up and running at port: %d", server_port);
 });
+
+const API_KEY = "AIzaSyBL0rVQiEE83XpSw5HNad8SvIltQtHa7bA";
 
 function shuffle(array) {
   let currentIndex = array.length,
@@ -47,7 +50,8 @@ async function getSnippet(id) {
   const response = await axios.get(
     "https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=" +
       id +
-      "&key=AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA"
+      "&key=" +
+      API_KEY
   );
   return response.data;
 }
@@ -56,7 +60,8 @@ async function getChannelAvatar(channel_id) {
   const response = await axios.get(
     "https://youtube.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=" +
       channel_id +
-      "&key=AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA"
+      "&key=" +
+      API_KEY
   );
   return response.data.items[0].snippet.thumbnails.default.url;
 }
@@ -100,7 +105,8 @@ function main(setting) {
     "kTJczUoc26U",
     "ZqDBgYPpUTg",
     "TkYVBTEMC5s",
-    "9lwYQO5BDM4"
+    "9lwYQO5BDM4",
+    "bl8P9WFbUs"
   );
 
   video["server_idle_videos_playback_id"] = shuffle(
@@ -184,7 +190,9 @@ function main(setting) {
       const response = await axios.get(
         "https://www.googleapis.com/youtube/v3/videos?id=" +
           video["video_in_queue"][video["now_playing_position"] - 1] +
-          "&key=AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA&part=contentDetails"
+          "&key=" +
+          API_KEY +
+          "&part=contentDetails"
       );
       return response.data;
     } else {
@@ -193,7 +201,9 @@ function main(setting) {
           video["server_idle_videos_playback_id"][
             video["now_playing_position"] - 1
           ] +
-          "&key=AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA&part=contentDetails"
+          "&key=" +
+          API_KEY +
+          "&part=contentDetails"
       );
       return response.data;
     }
@@ -381,13 +391,18 @@ setTimeout(() => {
     );
   });
 
-  app.get("/admin/api/ping", function (req, res) {
+  app.get("/admin/api/server/ping", function (req, res) {
     res.send("Server is up");
   });
 
   app.get("/admin/api/server/restart", function (req, res) {
     res.send("Restarting server...");
     process.exit(0);
+  });
+
+  app.get("/admin/api/server/shutdown", function (req, res) {
+    res.send("Shutting server down ...");
+    exec("pm2-runtime stop server.js");
   });
 
   // always put this code at bottom for 404 handling
