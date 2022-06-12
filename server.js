@@ -359,7 +359,7 @@ setTimeout(() => {
   app.get("/admin/api/queue", function (req, res) {
     res.set("Content-Type", "text/html");
     res.send(
-      "<ul style='padding: 0; margin: 0;margin-top: 15px'>" +
+      "<ul style='padding: 0; margin: 0'>" +
         video["video_in_queue"]
           .map((vid) => {
             return (
