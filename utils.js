@@ -29,14 +29,14 @@ function shuffle(array) {
 
 async function getSnippet(id) {
   const response = await axios.get(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${id}&key=${API_KEYS[1]}`
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${id}&key=${API_KEYS[3]}`
   );
   return response.data;
 }
 
 async function getChannelAvatar(id) {
   const response = await axios.get(
-    `https://youtube.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=${id}&key=${API_KEYS[1]}`
+    `https://youtube.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=${id}&key=${API_KEYS[3]}`
   );
   return response.data;
 }

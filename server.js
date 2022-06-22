@@ -13,7 +13,9 @@ var io = require("socket.io")(server, {
 require("dotenv").config();
 var exec = require("child_process").exec;
 var utils = require("./utils");
-
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 const api = {};
 let serverUptime = 0;
 setInterval(() => {
@@ -125,11 +127,14 @@ async function liveServer(params) {
   // Users watching counter
   api["users_watching"] = 0;
   api["now_watching"] = [];
+
+  if (params == "clear") clearInterval(refresh);
 }
 
 var connectCounter = 0;
 io.on("connect", function () {
   connectCounter++;
+  io.emit("views");
 });
 
 io.on("connection", function (socket) {
@@ -137,18 +142,27 @@ io.on("connection", function (socket) {
     console.log(`User: ${username} connected!`);
     api["now_watching"].push(username);
   });
+
+  socket.on("discon", (username) => {
+    console.log(`User: ${username} disconnected!`);
+    api["now_watching"].splice(api["now_watching"].indexOf(username), 1);
+  });
+
   console.log("Someone just connected with ID: " + socket.id);
   console.log("Total user(s): " + connectCounter);
   api["users_watching"] = connectCounter;
 
   socket.on("disconnect", function () {
-    socket.on("disconn", (username) => {
-      console.log(`User: ${username} disconnected!`);
-      api["now_watching"].splice(api["now_watching"].indexOf(username), 1);
-    });
     connectCounter--;
+    io.emit("views");
     console.log("Total users: " + connectCounter);
     api["users_watching"] = connectCounter;
+    // if (connectCounter == 0) {
+    //   api["now_watching"] = [];
+    // }
+    if (api["now_watching"].length > api["users_watching"]) {
+      api["now_watching"].splice(-1);
+    }
   });
 
   socket.on("chat-message", (data) => {
@@ -200,4 +214,180 @@ liveServer();
 // The API is going publicly live!!!!
 app.get("/live", function (req, res) {
   res.json(api);
+});
+
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname + "/index.html"));
+});
+
+app.get("/assets/style", (req, res) => {
+  res.sendFile(path.join(__dirname + "/style.css"));
+});
+
+app.get("/admin/api/shuffle", function (req, res) {
+  liveServer("clear");
+  res.send("Shuffled songs successfully!");
+});
+
+app.get("/admin/api/client/refresh", function (req, res) {
+  res.send("Send refresh emission to users successfully!");
+  io.emit("refresh");
+});
+
+app.get("/admin/api/client/play", function (req, res) {
+  res.send("Send play emission to users successfully!");
+  io.emit("play");
+});
+
+app.get("/admin/api/songs/reload-order", function (req, res) {
+  api["video_in_queue"].forEach((ele, index) => {
+    ele.position = index + 1;
+  });
+  res.send("Reloaded song orders successfully!");
+});
+
+app.get("/admin/api/player/forward", function (req, res) {
+  api["elapsed_time"] += 10;
+  io.emit("refresh");
+  res.send("Forwarded 10 seconds successfully!");
+});
+
+app.get("/admin/api/player/rewind", function (req, res) {
+  api["elapsed_time"] -= 10;
+  io.emit("refresh");
+  res.send("Rewinded 10 seconds successfully!");
+});
+
+app.get("/admin/api/player/next", function (req, res) {
+  api["now_playing_position"]++;
+  api["elapsed_time"] = 0;
+  api["current_video_duration"] =
+    api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
+  api["now_playing_video_info"] =
+    api["video_in_queue"][api["now_playing_position"] - 1];
+  io.emit("refresh");
+  setTimeout(() => {
+    io.emit("play");
+  }, 500);
+  res.send("Skip song successfully!");
+});
+
+app.get("/admin/api/player/previous", function (req, res) {
+  api["now_playing_position"]--;
+  api["elapsed_time"] = 0;
+  api["current_video_duration"] =
+    api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
+  api["now_playing_video_info"] =
+    api["video_in_queue"][api["now_playing_position"] - 1];
+  io.emit("refresh");
+  setTimeout(() => {
+    io.emit("play");
+  }, 500);
+  res.send("Replayed previous song successfully!");
+});
+
+function nowWatching() {
+  if (api["now_watching"] != "") {
+    return " (" + api["now_watching"].join(", ") + ")";
+  } else {
+    return "";
+  }
+}
+
+app.get("/admin/api/status", function (req, res) {
+  setTimeout(() => {
+    res.send(
+      "Server status: Up and running for " +
+        parseInt(moment.duration(serverUptime, "seconds").asDays()) +
+        " day(s) and " +
+        moment.utc(serverUptime * 1000).format("HH:mm:ss") +
+        "<br>User(s) watching: " +
+        connectCounter +
+        nowWatching() +
+        "<br>Total videos: " +
+        api["total_videos"] +
+        "<br>Now playing: " +
+        (api["now_playing_video_info"].video_title
+          ? api["now_playing_video_info"].video_title
+          : "Loading...") +
+        "<br>Current song position: " +
+        api["now_playing_position"] +
+        "<br>Current song duration: " +
+        api["current_video_duration"] +
+        "<br>Elapsed time: " +
+        api["elapsed_time"]
+    );
+  }, 500);
+});
+
+app.get("/admin/api/queue", function (req, res) {
+  res.set("Content-Type", "text/html");
+  setTimeout(() => {
+    res.send(
+      "<ul style='padding: 0; margin: 0'>" +
+        api["video_in_queue"]
+          .map((vid) => {
+            return (
+              "<div style='display: flex; flex-direction: row;border: 1px solid black'><img src='" +
+              vid.video_thumbnail +
+              "' style='margin-right: 15px' /><li style='justify-content: center;display: flex;flex-direction: column;'><b>" +
+              vid.video_title +
+              "</b><ul><li>Position: " +
+              vid.position +
+              "</li><li>Duration: " +
+              vid.video_duration +
+              "</li></ul></li></div><br>"
+            );
+          })
+          .join("") +
+        "</ul>"
+    );
+  }, 200);
+});
+
+app.get("/admin/api/songs/change", function (req, res) {
+  // var requestedUrl = req.url;
+  // var requestedVideo =
+  // requestedUrl.split("/")[requestedUrl.split("/").length - 1];
+  var requestedVideo = req.body.id;
+  res.set("Content-Type", "text/html");
+  res.send(
+    "Your video: <b>" +
+      requestedVideo +
+      "</b> has been updated to now playing song!"
+  );
+});
+
+app.post("/admin/api/songs/change", (req, res) => {
+  var requestedVideo = req.body.id;
+  res.set("Content-Type", "text/html");
+  res.send(
+    "Your video: <b>" +
+      requestedVideo +
+      "</b> has been updated to now playing song!"
+  );
+});
+
+app.get("/admin/api/server/ping", function (req, res) {
+  res.send("Server is up");
+});
+
+app.get("/admin/api/server/restart", function (req, res) {
+  res.send("Restarting server...");
+  process.exit(0);
+});
+
+app.get("/admin/api/server/shutdown", function (req, res) {
+  res.send("Shutting server down ...");
+  exec("pm2-runtime stop server.js");
+});
+
+// always put this code at bottom for 404 handling
+app.get("/*", function (req, res) {
+  var requestedUrl = req.protocol + "://" + req.get("Host") + req.url;
+  res.send(
+    "Enter correct API link!<br>Your url: " +
+      requestedUrl +
+      " does not match any of our URL routes!"
+  );
 });

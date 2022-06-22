@@ -50,6 +50,12 @@
         "
       >
         <legend>Radio control</legend>
+        <button class="btn btn-success" onclick="refreshClient()">
+          Send refresh emission event to users
+        </button>
+        <button class="btn btn-default" onclick="playClient()">
+          Send play emission event to users
+        </button>
         <button class="btn btn-default" onclick="shuffle()">
           Shuffle playing songs
         </button>
@@ -59,15 +65,20 @@
         <button class="btn btn-default" onclick="changeSong()">
           Change playing song
         </button>
-        <button class="btn btn-default">Forward 10 seconds >></button>
-        <button class="btn btn-default">Rewind 10 seconds <<</button>
+        <button class="btn btn-default" onclick="forward()">
+          Forward 10 seconds >>
+        </button>
+        <button class="btn btn-default" onclick="rewind()">
+          Rewind 10 seconds <<
+        </button>
+        <button class="btn btn-default" onclick="next()">Next song ></button>
+        <button class="btn btn-default" onclick="previous()">
+          < Previous song
+        </button>
         <button class="btn btn-default">Add song at the top of queue</button>
         <button class="btn btn-default">Add song at the bottom of queue</button>
         <button class="btn btn-default">Remove all queued songs</button>
         <button class="btn btn-default">Disable queue</button>
-        <button class="btn btn-default">
-          Send refresh emission event to users
-        </button>
         <button class="btn btn-warning" onclick="restart()">
           (!!) Restart server
         </button>
@@ -98,7 +109,11 @@
           $("#error_code").show();
           $("#error").text(msg);
         }
-        type == "success_html" && $("#error").html(msg + ``);
+        type == "success_html" &&
+          $("#error").html(
+            msg +
+              `<br><br><button onclick='handleAlert("hide")' class="btn btn-default">OK, I know</button>`
+          );
         code &&
           $("#error_code").html(
             code +
@@ -130,9 +145,11 @@
 
       function changeSong() {
         var videoToPlay = prompt("Type your YouTube video ID here:");
-        if (videoToPlay != "") {
-          $.get(
-            "/admin/api/songs/change/" + videoToPlay,
+        if (videoToPlay === null) return;
+        if (videoToPlay != "" && videoToPlay != null) {
+          $.post(
+            "/admin/api/songs/change",
+            { id: videoToPlay, requested_by: "Dương Tùng Anh" },
             function (data, status) {
               handleAlert("success_html", data);
             }
@@ -146,6 +163,78 @@
 
       function reloadOrder() {
         $.get("/admin/api/songs/reload-order", function (data, status) {
+          handleAlert("success", data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
+        });
+      }
+
+      function refreshClient() {
+        $.get("/admin/api/client/refresh", function (data, status) {
+          handleAlert("success", data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
+        });
+      }
+
+      function forward() {
+        $.get("/admin/api/player/forward", function (data, status) {
+          handleAlert("success", data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
+        });
+      }
+
+      function rewind() {
+        $.get("/admin/api/player/rewind", function (data, status) {
+          handleAlert("success", data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
+        });
+      }
+
+      function next() {
+        $.get("/admin/api/player/next", function (data, status) {
+          handleAlert("success", data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
+        });
+      }
+
+      function previous() {
+        $.get("/admin/api/player/previous", function (data, status) {
+          handleAlert("success", data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
+        });
+      }
+
+      function playClient() {
+        $.get("/admin/api/client/play", function (data, status) {
           handleAlert("success", data);
         }).catch((err) => {
           handleAlert(
