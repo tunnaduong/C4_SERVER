@@ -142,14 +142,13 @@ io.on("connection", function (socket) {
   api["users_watching"] = connectCounter;
 
   socket.on("disconnect", function () {
+    socket.on("disconn", (username) => {
+      console.log(`User: ${username} disconnected!`);
+      api["now_watching"].splice(api["now_watching"].indexOf(username), 1);
+    });
     connectCounter--;
     console.log("Total users: " + connectCounter);
     api["users_watching"] = connectCounter;
-  });
-
-  socket.on("disconn", (username) => {
-    console.log(`User: ${username} disconnected!`);
-    api["now_watching"].splice(api["now_watching"].indexOf(username), 1);
   });
 
   socket.on("chat-message", (data) => {
