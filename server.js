@@ -70,6 +70,13 @@ async function liveServer(params) {
                 video_views: parseInt(res.items[0].statistics.viewCount),
                 published_at: res.items[0].snippet.publishedAt,
                 requested_by: "Dương Tùng Anh",
+                voting: {
+                  like_count: 0,
+                  liked_by: [],
+                  disliked_by: [],
+                  vote_skip: 0,
+                  vote_remove: 0,
+                },
               });
 
               // Code that need to be waited and refreshed right after new video pushed into array
@@ -195,6 +202,13 @@ io.on("connection", function (socket) {
           video_views: parseInt(res.items[0].statistics.viewCount),
           published_at: res.items[0].snippet.publishedAt,
           requested_by: data.requester,
+          voting: {
+            like_count: 0,
+            liked_by: [],
+            disliked_by: [],
+            vote_skip: 0,
+            vote_remove: 0,
+          },
         });
 
         // Code that need to be waited right after new video pushed into array
@@ -381,6 +395,13 @@ app.post("/admin/api/songs/change", (req, res) => {
         video_views: parseInt(res.items[0].statistics.viewCount),
         published_at: res.items[0].snippet.publishedAt,
         requested_by: requester,
+        voting: {
+          like_count: 0,
+          liked_by: [],
+          disliked_by: [],
+          vote_skip: 0,
+          vote_remove: 0,
+        },
       });
 
       // Code that need to be waited right after new video pushed into array
@@ -407,6 +428,10 @@ app.post("/admin/api/songs/change", (req, res) => {
       requestedVideo +
       "</b> has been updated to now playing song!"
   );
+});
+
+app.post("/admin/api/songs/vote/like", function (req, res) {
+  res.send("Added like to video successfully!");
 });
 
 app.get("/admin/api/server/ping", function (req, res) {
