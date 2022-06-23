@@ -116,7 +116,10 @@ async function liveServer(params) {
       api["now_playing_video_info"] =
         api["video_in_queue"][api["now_playing_position"] - 1];
       // If we reach the end of the playlist then reset counters and replay with shuffle
-      if (api["now_playing_position"] > api["total_videos"]) {
+      if (
+        api["now_playing_position"] > api["total_videos"] ||
+        api["now_playing_position"] < 1
+      ) {
         api["now_playing_position"] = 1;
         clearInterval(refresh);
         liveServer();
@@ -175,13 +178,13 @@ io.on("connection", function (socket) {
   });
 
   socket.on("add-queue", (data) => {
-    console.log("Server received a video with ID: " + id);
+    console.log("Server received a video with ID: " + data.id);
     utils.getSnippet(data.id).then((res) => {
       utils.getChannelAvatar(res.items[0].snippet.channelId).then((res2) => {
         api["queue_by_users"].push({
           position: 1,
           is_idle_video: false,
-          video_id: id,
+          video_id: data.id,
           video_title: res.items[0].snippet.title,
           video_thumbnail: res.items[0].snippet.thumbnails.default.url,
           video_duration: parseInt(
@@ -203,6 +206,7 @@ io.on("connection", function (socket) {
           api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
         api["now_playing_video_info"] = api["video_in_queue"][0];
         api["video_in_queue"].unshift(api["queue_by_users"]);
+        api["elapsed_time"] = 0;
       });
     });
   });
@@ -261,10 +265,19 @@ app.get("/admin/api/player/rewind", function (req, res) {
 app.get("/admin/api/player/next", function (req, res) {
   api["now_playing_position"]++;
   api["elapsed_time"] = 0;
-  api["current_video_duration"] =
-    api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
-  api["now_playing_video_info"] =
-    api["video_in_queue"][api["now_playing_position"] - 1];
+  // If we reach the end of the playlist then reset counters and replay with shuffle
+  if (
+    api["now_playing_position"] > api["total_videos"] ||
+    api["now_playing_position"] < 1
+  ) {
+    api["now_playing_position"] = 1;
+    liveServer("clear");
+  } else {
+    api["current_video_duration"] =
+      api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
+    api["now_playing_video_info"] =
+      api["video_in_queue"][api["now_playing_position"] - 1];
+  }
   io.emit("refresh");
   setTimeout(() => {
     io.emit("play");
@@ -346,20 +359,48 @@ app.get("/admin/api/queue", function (req, res) {
 });
 
 app.get("/admin/api/songs/change", function (req, res) {
-  // var requestedUrl = req.url;
-  // var requestedVideo =
-  // requestedUrl.split("/")[requestedUrl.split("/").length - 1];
-  var requestedVideo = req.body.id;
-  res.set("Content-Type", "text/html");
-  res.send(
-    "Your video: <b>" +
-      requestedVideo +
-      "</b> has been updated to now playing song!"
-  );
+  res.send("Method GET not allowed!");
 });
 
 app.post("/admin/api/songs/change", (req, res) => {
   var requestedVideo = req.body.id;
+  var requester = req.body.requested_by;
+  utils.getSnippet(requestedVideo).then((res) => {
+    utils.getChannelAvatar(res.items[0].snippet.channelId).then((res2) => {
+      api["video_in_queue"].unshift({
+        position: 1,
+        is_idle_video: false,
+        video_id: requestedVideo,
+        video_title: res.items[0].snippet.title,
+        video_thumbnail: res.items[0].snippet.thumbnails.default.url,
+        video_duration: parseInt(
+          moment.duration(res.items[0].contentDetails.duration).format("s")
+        ),
+        uploaded_by: res.items[0].snippet.channelTitle,
+        channel_avatar: res2.items[0].snippet.thumbnails.default.url,
+        video_views: parseInt(res.items[0].statistics.viewCount),
+        published_at: res.items[0].snippet.publishedAt,
+        requested_by: requester,
+      });
+
+      // Code that need to be waited right after new video pushed into array
+      api["video_in_queue"].forEach((ele, index) => {
+        ele.position = index + 1;
+      });
+      api["total_videos"] = api["video_in_queue"].length;
+      api["current_video_duration"] =
+        api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
+      api["now_playing_video_info"] = api["video_in_queue"][0];
+      api["now_playing_position"] = 1;
+      api["elapsed_time"] = 0;
+    });
+  });
+  setTimeout(() => {
+    io.emit("refresh");
+  }, 1000);
+  setTimeout(() => {
+    io.emit("play");
+  }, 1500);
   res.set("Content-Type", "text/html");
   res.send(
     "Your video: <b>" +
