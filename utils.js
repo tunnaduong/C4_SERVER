@@ -1,10 +1,14 @@
 const axios = require("axios");
 
 const API_KEYS = [
-  "AIzaSyBL0rVQiEE83XpSw5HNad8SvIltQtHa7bA",
-  "AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA",
-  "AIzaSyAKLubflIVrPOTU6KOIpkWqGXdWTp7dEEI",
-  "AIzaSyC9_pzo_I_4kLwD8FSm5ZHdvlZRFDA8YsI",
+  // "AIzaSyBL0rVQiEE83XpSw5HNad8SvIltQtHa7bA",
+  // "AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA",
+  // "AIzaSyAKLubflIVrPOTU6KOIpkWqGXdWTp7dEEI",
+  // "AIzaSyC9_pzo_I_4kLwD8FSm5ZHdvlZRFDA8YsI",
+  "AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y",
+  "AIzaSyD9qo6OxJCd8hnATwFdbP-9Eqw1tyHUKgA",
+  "AIzaSyAYLddt4yOsGr_DyeBchGRdinmKhDsTSz4",
+  "AIzaSyCQA29oDGxWKHnhv7qIeSkeVVbjcFaf9Bw",
 ];
 
 function shuffle(array) {
@@ -28,31 +32,54 @@ function shuffle(array) {
 }
 
 async function getSnippet(id) {
-  const response = await axios.get(
-    `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${id}&key=${API_KEYS[3]}`
+  const requests = [];
+  API_KEYS.forEach((key) =>
+    requests.push(
+      axios.get(
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${id}&key=${key}`
+      )
+    )
   );
+  const response = await Promise.any(requests);
   return response.data;
 }
 
 async function getChannelAvatar(id) {
-  const response = await axios.get(
-    `https://youtube.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=${id}&key=${API_KEYS[3]}`
+  const requests = [];
+  API_KEYS.forEach((key) =>
+    requests.push(
+      axios.get(
+        `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails,statistics&id=${id}&key=${key}`
+      )
+    )
   );
+  const response = await Promise.any(requests);
   return response.data;
 }
 
 async function getSearchResults(query) {
-  const response = await axios.get(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=15&key=${API_KEYS[3]}&q=${query}`
+  const requests = [];
+  API_KEYS.forEach((key) =>
+    requests.push(
+      axios.get(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=15&key=${key}&q=${query}`
+      )
+    )
   );
+  const response = await Promise.any(requests);
   return response.data;
 }
 
 async function getSuggestQueries(query) {
-  const response = await axios.get(
-    `http://suggestqueries.google.com/complete/search?q=${query}&client=firefox`
-  );
-  return response.data;
+  const response = await axios.request({
+    method: "GET",
+    url: `http://suggestqueries.google.com/complete/search?q=${query}&client=firefox`,
+    responseType: "arraybuffer",
+    responseEncoding: "binary",
+  });
+  const decoder = new TextDecoder("ISO-8859-1");
+  let html = decoder.decode(response.data);
+  return html;
 }
 
 module.exports = {

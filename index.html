@@ -18,18 +18,34 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="/assets/style" />
     <title>C4K60 Radio Control Panel</title>
+    <style>
+      .hover-search {
+        padding: 5px;
+        user-select: none;
+      }
+
+      .hover-search:hover {
+        background-color: #f0f0f0;
+      }
+
+      #search-results {
+        margin: 30px 0 45px;
+      }
+    </style>
   </head>
   <body class="container">
     <h1>C4K60 Live Radio Control Panel</h1>
     <h3>Welcome, Dương Tùng Anh!</h3>
 
-    <div style="float: left">
-      <fieldset style="width: 550px">
+    <div style="float: left; min-width: 50%">
+      <fieldset style="max-width: 550px; width: 100%">
         <legend>Status</legend>
         <div id="status">Fetching data...</div>
       </fieldset>
 
-      <div style="margin: 15px 0">
+      <br />
+
+      <div style="margin: 15px 0; display: none">
         <p style="color: red; display: none" id="error"></p>
         <code style="color: red; display: none" id="error_code"></code>
         <button
@@ -42,7 +58,8 @@
       </div>
       <fieldset
         style="
-          width: 350px;
+          max-width: 550px;
+          width: 100%;
           display: inline-flex;
           flex-wrap: wrap;
           gap: 12px;
@@ -86,14 +103,65 @@
           (!!!) Shutdown server
         </button>
       </fieldset>
+      <br />
+      <br />
+      <fieldset style="max-width: 550px; width: 100%">
+        <legend>Search for songs</legend>
+        <div style="display: flex; flex-direction: row">
+          <input
+            type="text"
+            placeholder="Type a keyword to see the suggestions..."
+            onkeyup="suggest(this)"
+            onclick="suggest(this)"
+            class="form-control"
+            id="search-bar"
+          />
+          <button
+            class="btn btn-default"
+            id="search-btn"
+            style="margin-left: 10px"
+            onclick="search($('#search-bar').val())"
+          >
+            Seach
+          </button>
+        </div>
+        <div
+          id="suggest"
+          style="
+            position: absolute;
+            width: max-content;
+            background-color: white;
+          "
+        ></div>
+        <div id="search-results">
+          <img
+            src="/assets/search"
+            width="200"
+            style="margin: 0 auto; display: block"
+          />
+          <p style="text-align: center">Your search results are here...</p>
+        </div>
+      </fieldset>
     </div>
 
-    <fieldset style="max-width: 550px; width: 100%; float: right">
+    <fieldset style="max-width: 550px; width: 100%">
       <legend>Queue</legend>
       <div id="queue">Fetching data...</div>
     </fieldset>
 
     <script>
+      $("#suggest").width($("#status").width() - $("#search-btn").width() - 35);
+
+      $(document).click(function (event) {
+        var $target = $(event.target);
+        if (
+          !$target.closest("#suggest").length &&
+          !$target.closest("#search-bar").length
+        ) {
+          $("#suggest").html("");
+        }
+      });
+
       function handleAlert(type, msg, code) {
         type == "success" || type == "success_html"
           ? $("#error").css("color", "green")
@@ -288,6 +356,44 @@
             );
           });
         }
+      }
+
+      function suggest(element) {
+        query = encodeURI(element.value);
+        if (query.length > 0) {
+          $.get(
+            "/admin/api/songs/search/suggest?query=" + query,
+            (data, status) => {
+              $("#suggest").html(data);
+            }
+          );
+        } else {
+          $("#suggest").html("");
+        }
+      }
+
+      function search(query) {
+        $("#search-bar").val(query);
+        $("#suggest").html("");
+        $.get("/admin/api/songs/search?query=" + query, (data, status) => {
+          $("#search-results").html(data);
+        }).catch((err) => {
+          handleAlert(
+            "dont_hide",
+            "Failed! Error: " + err.status + ". Server response with message: ",
+            err.responseText
+          );
+        });
+      }
+
+      function play(id) {
+        $.post(
+          "/admin/api/songs/change",
+          { id: id, requested_by: "Dương Tùng Anh" },
+          function (data, status) {
+            handleAlert("success_html", data);
+          }
+        ).catch((err) => handleAlert("error", "Failed!! Error: " + err.status));
       }
 
       setInterval(() => {

@@ -107,32 +107,34 @@ async function liveServer(params) {
     });
   }
 
-  // The magic of live radio happens here ^^
-  var refresh = setInterval(() => {
-    // Increase elapsed time by one second
-    api["elapsed_time"]++;
-    // If elapsed time exceeds current video duration then change to the next song
-    if (api["elapsed_time"] >= api["current_video_duration"]) {
-      // Reset the elapsed time counter
-      api["elapsed_time"] = 0;
-      // Increase the position
-      api["now_playing_position"]++;
-      // Refresh our stats
-      api["current_video_duration"] =
-        api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
-      api["now_playing_video_info"] =
-        api["video_in_queue"][api["now_playing_position"] - 1];
-      // If we reach the end of the playlist then reset counters and replay with shuffle
-      if (
-        api["now_playing_position"] > api["total_videos"] ||
-        api["now_playing_position"] < 1
-      ) {
-        api["now_playing_position"] = 1;
-        clearInterval(refresh);
-        liveServer();
+  utils.getSnippet("KypuJGsZ8pQ").then(() => {
+    // The magic of live radio happens here ^^
+    var refresh = setInterval(() => {
+      // Increase elapsed time by one second
+      api["elapsed_time"]++;
+      // If elapsed time exceeds current video duration then change to the next song
+      if (api["elapsed_time"] >= api["current_video_duration"]) {
+        // Reset the elapsed time counter
+        api["elapsed_time"] = 0;
+        // Increase the position
+        api["now_playing_position"]++;
+        // Refresh our stats
+        api["current_video_duration"] =
+          api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
+        api["now_playing_video_info"] =
+          api["video_in_queue"][api["now_playing_position"] - 1];
+        // If we reach the end of the playlist then reset counters and replay with shuffle
+        if (
+          api["now_playing_position"] > api["total_videos"] ||
+          api["now_playing_position"] < 1
+        ) {
+          api["now_playing_position"] = 1;
+          clearInterval(refresh);
+          liveServer();
+        }
       }
-    }
-  }, 1000);
+    }, 1000);
+  });
 
   // Users watching counter
   api["users_watching"] = 0;
@@ -140,6 +142,8 @@ async function liveServer(params) {
 
   if (params == "clear") clearInterval(refresh);
 }
+
+// Here is the websocket part that handle the live events between clients and server
 
 var connectCounter = 0;
 io.on("connect", function () {
@@ -167,9 +171,6 @@ io.on("connection", function (socket) {
     io.emit("views");
     console.log("Total users: " + connectCounter);
     api["users_watching"] = connectCounter;
-    // if (connectCounter == 0) {
-    //   api["now_watching"] = [];
-    // }
     if (api["now_watching"].length > api["users_watching"]) {
       api["now_watching"].splice(-1);
     }
@@ -230,6 +231,8 @@ io.on("connection", function (socket) {
 liveServer();
 
 // The API is going publicly live!!!!
+// But we need to set a timeout for undefined safety
+
 app.get("/live", function (req, res) {
   res.json(api);
 });
@@ -240,6 +243,10 @@ app.get("/admin", (req, res) => {
 
 app.get("/assets/style", (req, res) => {
   res.sendFile(path.join(__dirname + "/style.css"));
+});
+
+app.get("/assets/search", (req, res) => {
+  res.sendFile(path.join(__dirname + "/assets/search.png"));
 });
 
 app.get("/admin/api/shuffle", function (req, res) {
@@ -314,7 +321,7 @@ app.get("/admin/api/player/previous", function (req, res) {
 });
 
 function nowWatching() {
-  if (api["now_watching"] != "") {
+  if (api["now_watching"]) {
     return " (" + api["now_watching"].join(", ") + ")";
   } else {
     return "";
@@ -324,7 +331,7 @@ function nowWatching() {
 app.get("/admin/api/status", function (req, res) {
   setTimeout(() => {
     res.send(
-      "Server status: Up and running for " +
+      "<div style='width: 100%'>Server status: Up and running for " +
         parseInt(moment.duration(serverUptime, "seconds").asDays()) +
         " day(s) and " +
         moment.utc(serverUptime * 1000).format("HH:mm:ss") +
@@ -334,7 +341,8 @@ app.get("/admin/api/status", function (req, res) {
         "<br>Total videos: " +
         api["total_videos"] +
         "<br>Now playing: " +
-        (api["now_playing_video_info"].video_title
+        (api["now_playing_video_info"] !== undefined &&
+        api["now_playing_video_info"].video_title
           ? api["now_playing_video_info"].video_title
           : "Loading...") +
         "<br>Current song position: " +
@@ -342,7 +350,8 @@ app.get("/admin/api/status", function (req, res) {
         "<br>Current song duration: " +
         api["current_video_duration"] +
         "<br>Elapsed time: " +
-        api["elapsed_time"]
+        api["elapsed_time"] +
+        "</div>"
     );
   }, 500);
 });
@@ -369,7 +378,7 @@ app.get("/admin/api/queue", function (req, res) {
           .join("") +
         "</ul>"
     );
-  }, 200);
+  }, 1000);
 });
 
 app.get("/admin/api/songs/change", function (req, res) {
@@ -381,7 +390,7 @@ app.post("/admin/api/songs/change", (req, res) => {
   var requester = req.body.requested_by;
   utils.getSnippet(requestedVideo).then((res) => {
     utils.getChannelAvatar(res.items[0].snippet.channelId).then((res2) => {
-      api["video_in_queue"].unshift({
+      api["video_in_queue"].splice(api["now_playing_position"], 0, {
         position: 1,
         is_idle_video: false,
         video_id: requestedVideo,
@@ -408,11 +417,12 @@ app.post("/admin/api/songs/change", (req, res) => {
       api["video_in_queue"].forEach((ele, index) => {
         ele.position = index + 1;
       });
+      api["now_playing_position"]++;
       api["total_videos"] = api["video_in_queue"].length;
       api["current_video_duration"] =
         api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
-      api["now_playing_video_info"] = api["video_in_queue"][0];
-      api["now_playing_position"] = 1;
+      api["now_playing_video_info"] =
+        api["video_in_queue"][api["now_playing_position"] - 1];
       api["elapsed_time"] = 0;
     });
   });
@@ -421,7 +431,7 @@ app.post("/admin/api/songs/change", (req, res) => {
   }, 1000);
   setTimeout(() => {
     io.emit("play");
-  }, 1500);
+  }, 2500);
   res.set("Content-Type", "text/html");
   res.send(
     "Your video: <b>" +
@@ -435,11 +445,7 @@ app.post("/admin/api/songs/vote/like", function (req, res) {
 });
 
 app.get("/admin/api/songs/search", function (req, res) {
-  res.send("GET method not allowed!");
-});
-
-app.post("/admin/api/songs/search", function (req, res) {
-  var query = req.body.query;
+  var query = req.query.query;
   if (!query) query = "";
   res.set("Content-Type", "text/html");
   utils.getSearchResults(query).then((data) => {
@@ -453,9 +459,7 @@ app.post("/admin/api/songs/search", function (req, res) {
             vid.snippet.title +
             "</b><ul><li>Tải lên bởi: " +
             vid.snippet.channelTitle +
-            "</li><li><a href='javascript:play(" +
-            vid.id.videoId +
-            ")'>Play this song!</a></li></ul></li></div><br>"
+            `</li><li><a href="javascript:play('${vid.id.videoId}')">Play this song!</a></li></ul></li></div><br>`
           );
         })
         .join("")
@@ -463,27 +467,18 @@ app.post("/admin/api/songs/search", function (req, res) {
   });
 });
 
-app.post("/admin/api/songs/search/suggest", function (req, res) {
-  var query = req.body.query;
+app.get("/admin/api/songs/search/suggest", function (req, res) {
+  var query = encodeURI(req.query.query);
   if (!query) query = "";
   res.set("Content-Type", "text/html");
-  utils.getSearchResults(query).then((data) => {
+  utils.getSuggestQueries(query).then((data) => {
     res.send(
-      data.items
-        .map((vid) => {
-          return (
-            "<div style='display: flex; flex-direction: row;border: 1px solid black'><img src='" +
-            vid.snippet.thumbnails.default.url +
-            "' style='margin-right: 15px' /><li style='justify-content: center;display: flex;flex-direction: column;'><b>" +
-            vid.snippet.title +
-            "</b><ul><li>Tải lên bởi: " +
-            vid.snippet.channelTitle +
-            "</li><li><a href='javascript:play(" +
-            vid.id.videoId +
-            ")'>Play this song!</a></li></ul></li></div><br>"
-          );
-        })
-        .join("")
+      "<style>body {margin: 0}</style>" +
+        JSON.parse(data)[1]
+          .map((ele) => {
+            return `<div class="hover-search" onclick="search('${ele}')">${ele}</div>`;
+          })
+          .join("")
     );
   });
 });
