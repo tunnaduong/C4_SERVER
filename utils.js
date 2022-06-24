@@ -41,4 +41,24 @@ async function getChannelAvatar(id) {
   return response.data;
 }
 
-module.exports = { shuffle, getSnippet, getChannelAvatar };
+async function getSearchResults(query) {
+  const response = await axios.get(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=15&key=${API_KEYS[3]}&q=${query}`
+  );
+  return response.data;
+}
+
+async function getSuggestQueries(query) {
+  const response = await axios.get(
+    `http://suggestqueries.google.com/complete/search?q=${query}&client=firefox`
+  );
+  return response.data;
+}
+
+module.exports = {
+  shuffle,
+  getSnippet,
+  getChannelAvatar,
+  getSearchResults,
+  getSuggestQueries,
+};

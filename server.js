@@ -434,6 +434,60 @@ app.post("/admin/api/songs/vote/like", function (req, res) {
   res.send("Added like to video successfully!");
 });
 
+app.get("/admin/api/songs/search", function (req, res) {
+  res.send("GET method not allowed!");
+});
+
+app.post("/admin/api/songs/search", function (req, res) {
+  var query = req.body.query;
+  if (!query) query = "";
+  res.set("Content-Type", "text/html");
+  utils.getSearchResults(query).then((data) => {
+    res.send(
+      data.items
+        .map((vid) => {
+          return (
+            "<div style='display: flex; flex-direction: row;border: 1px solid black'><img src='" +
+            vid.snippet.thumbnails.default.url +
+            "' style='margin-right: 15px' /><li style='justify-content: center;display: flex;flex-direction: column;'><b>" +
+            vid.snippet.title +
+            "</b><ul><li>Tải lên bởi: " +
+            vid.snippet.channelTitle +
+            "</li><li><a href='javascript:play(" +
+            vid.id.videoId +
+            ")'>Play this song!</a></li></ul></li></div><br>"
+          );
+        })
+        .join("")
+    );
+  });
+});
+
+app.post("/admin/api/songs/search/suggest", function (req, res) {
+  var query = req.body.query;
+  if (!query) query = "";
+  res.set("Content-Type", "text/html");
+  utils.getSearchResults(query).then((data) => {
+    res.send(
+      data.items
+        .map((vid) => {
+          return (
+            "<div style='display: flex; flex-direction: row;border: 1px solid black'><img src='" +
+            vid.snippet.thumbnails.default.url +
+            "' style='margin-right: 15px' /><li style='justify-content: center;display: flex;flex-direction: column;'><b>" +
+            vid.snippet.title +
+            "</b><ul><li>Tải lên bởi: " +
+            vid.snippet.channelTitle +
+            "</li><li><a href='javascript:play(" +
+            vid.id.videoId +
+            ")'>Play this song!</a></li></ul></li></div><br>"
+          );
+        })
+        .join("")
+    );
+  });
+});
+
 app.get("/admin/api/server/ping", function (req, res) {
   res.send("Server is up");
 });
