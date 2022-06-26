@@ -1,14 +1,16 @@
 const axios = require("axios");
 
 const API_KEYS = [
-  // "AIzaSyBL0rVQiEE83XpSw5HNad8SvIltQtHa7bA",
-  // "AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA",
-  // "AIzaSyAKLubflIVrPOTU6KOIpkWqGXdWTp7dEEI",
-  // "AIzaSyC9_pzo_I_4kLwD8FSm5ZHdvlZRFDA8YsI",
+  "AIzaSyAfVMady7fkYvBdTiqeqkt3I6WaMXnP9ak",
+  "AIzaSyCQA29oDGxWKHnhv7qIeSkeVVbjcFaf9Bw",
+  "AIzaSyBL0rVQiEE83XpSw5HNad8SvIltQtHa7bA",
+  "AIzaSyA2-LY3jRpNm1ycJ_ribbSOvOr99wMQQqA",
+  "AIzaSyAKLubflIVrPOTU6KOIpkWqGXdWTp7dEEI",
+  "AIzaSyC9_pzo_I_4kLwD8FSm5ZHdvlZRFDA8YsI",
+  "AIzaSyDdVWJWCQVIKnD-p6IHJ-9rz6vFTg_CHtE",
   "AIzaSyB5qV77oNXYkbdIMHNsFCYPFLHggIzoA_Y",
   "AIzaSyD9qo6OxJCd8hnATwFdbP-9Eqw1tyHUKgA",
   "AIzaSyAYLddt4yOsGr_DyeBchGRdinmKhDsTSz4",
-  "AIzaSyCQA29oDGxWKHnhv7qIeSkeVVbjcFaf9Bw",
 ];
 
 function shuffle(array) {
@@ -67,6 +69,7 @@ async function getSearchResults(query) {
     )
   );
   const response = await Promise.any(requests);
+  console.log(requests);
   return response.data;
 }
 

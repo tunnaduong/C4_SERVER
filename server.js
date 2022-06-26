@@ -321,7 +321,7 @@ app.get("/admin/api/player/previous", function (req, res) {
 });
 
 function nowWatching() {
-  if (api["now_watching"]) {
+  if (api["now_watching"] != "") {
     return " (" + api["now_watching"].join(", ") + ")";
   } else {
     return "";
@@ -364,7 +364,10 @@ app.get("/admin/api/queue", function (req, res) {
         api["video_in_queue"]
           .map((vid) => {
             return (
-              "<div style='display: flex; flex-direction: row;border: 1px solid black'><img src='" +
+              "<div style='display: flex; flex-direction: row;border: 1px solid black;" +
+              (vid.position == api["now_playing_position"] &&
+                "background-color: #B0D0FF") +
+              "'><img src='" +
               vid.video_thumbnail +
               "' style='margin-right: 15px' /><li style='justify-content: center;display: flex;flex-direction: column;'><b>" +
               vid.video_title +
@@ -372,13 +375,30 @@ app.get("/admin/api/queue", function (req, res) {
               vid.position +
               "</li><li>Duration: " +
               vid.video_duration +
-              "</li></ul></li></div><br>"
+              `<a style="margin-left: 10px" href="javascript:changeSongInQueue(${vid.position})">Play this song!</a></li></ul></li></div><br>`
             );
           })
           .join("") +
         "</ul>"
     );
   }, 1000);
+});
+
+app.get("/admin/api/queue/change", function (req, res) {
+  var pos = req.query.position;
+  api["now_playing_position"] = pos;
+  api["current_video_duration"] =
+    api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
+  api["now_playing_video_info"] =
+    api["video_in_queue"][api["now_playing_position"] - 1];
+  api["elapsed_time"] = 0;
+  setTimeout(() => {
+    io.emit("refresh");
+  }, 1000);
+  setTimeout(() => {
+    io.emit("play");
+  }, 2500);
+  res.send("Successfully changed song!");
 });
 
 app.get("/admin/api/songs/change", function (req, res) {
@@ -445,7 +465,7 @@ app.post("/admin/api/songs/vote/like", function (req, res) {
 });
 
 app.get("/admin/api/songs/search", function (req, res) {
-  var query = req.query.query;
+  var query = encodeURI(req.query.query);
   if (!query) query = "";
   res.set("Content-Type", "text/html");
   utils.getSearchResults(query).then((data) => {
@@ -457,7 +477,7 @@ app.get("/admin/api/songs/search", function (req, res) {
             vid.snippet.thumbnails.default.url +
             "' style='margin-right: 15px' /><li style='justify-content: center;display: flex;flex-direction: column;'><b>" +
             vid.snippet.title +
-            "</b><ul><li>Tải lên bởi: " +
+            "</b><ul><li>Uploaded by: " +
             vid.snippet.channelTitle +
             `</li><li><a href="javascript:play('${vid.id.videoId}')">Play this song!</a></li></ul></li></div><br>`
           );
