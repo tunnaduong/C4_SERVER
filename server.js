@@ -145,35 +145,49 @@ async function liveServer(params) {
 
 // Here is the websocket part that handle the live events between clients and server
 
-var connectCounter = 0;
-io.on("connect", function () {
-  connectCounter++;
-  io.emit("views");
-});
+function onlyUnique(value, index, self) {
+  return self.indexOf(value) === index;
+}
 
+var connectCounter = 0;
 io.on("connection", function (socket) {
   socket.on("conn", (username) => {
+    io.emit("views");
     console.log(`User: ${username} connected!`);
     api["now_watching"].push(username);
+    connectCounter = connectCounter + 1;
+    console.log("Someone just connected with ID: " + socket.id);
+    console.log("Total user(s): " + connectCounter);
+    api["users_watching"] = connectCounter;
+    api["now_watching"] = api["now_watching"].filter(onlyUnique);
+    connectCounter = api["now_watching"].length;
+    api["users_watching"] = connectCounter;
   });
 
   socket.on("discon", (username) => {
     console.log(`User: ${username} disconnected!`);
     api["now_watching"].splice(api["now_watching"].indexOf(username), 1);
-  });
-
-  console.log("Someone just connected with ID: " + socket.id);
-  console.log("Total user(s): " + connectCounter);
-  api["users_watching"] = connectCounter;
-
-  socket.on("disconnect", function () {
     connectCounter--;
+    if (connectCounter < 0) {
+      connectCounter = 0;
+      api["users_watching"] = connectCounter;
+    }
     io.emit("views");
     console.log("Total users: " + connectCounter);
     api["users_watching"] = connectCounter;
     if (api["now_watching"].length > api["users_watching"]) {
       api["now_watching"].splice(-1);
     }
+  });
+
+  socket.on("disconnect", function () {
+    // connectCounter--;
+    io.emit("views");
+    console.log("Real disconnect! Total users: " + connectCounter);
+    // api["users_watching"] = connectCounter;
+    // if (api["now_watching"].length > api["users_watching"]) {
+    //   api["now_watching"].splice(-1);
+    // }
   });
 
   socket.on("chat-message", (data) => {
