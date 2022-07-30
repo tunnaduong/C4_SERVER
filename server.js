@@ -21,7 +21,7 @@ let serverUptime = 0;
 setInterval(() => {
   serverUptime++;
 }, 1000);
-var server_port = process.env.YOUR_PORT || process.env.PORT || 6969;
+var server_port = 10069;
 var server_host = "103.81.85.224";
 server.listen(server_port, server_host, function () {
   console.log(
