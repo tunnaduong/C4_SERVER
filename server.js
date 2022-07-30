@@ -253,6 +253,7 @@ liveServer();
 // But we need to set a timeout for undefined safety
 
 app.get("/live", function (req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.json(api);
 });
 
