@@ -22,7 +22,7 @@ setInterval(() => {
   serverUptime++;
 }, 1000);
 var server_port = process.env.YOUR_PORT || process.env.PORT || 6969;
-var server_host = process.env.YOUR_HOST || "0.0.0.0";
+var server_host = "127.0.0.1";
 server.listen(server_port, server_host, function () {
   console.log(
     "C4K60 Live Radio Server is up and running at port: %d",
