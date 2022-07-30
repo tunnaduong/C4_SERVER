@@ -107,34 +107,34 @@ async function liveServer(params) {
     });
   }
 
-  utils.getSnippet("KypuJGsZ8pQ").then(() => {
-    // The magic of live radio happens here ^^
-    var refresh = setInterval(() => {
-      // Increase elapsed time by one second
-      api["elapsed_time"]++;
-      // If elapsed time exceeds current video duration then change to the next song
-      if (api["elapsed_time"] >= api["current_video_duration"]) {
-        // Reset the elapsed time counter
-        api["elapsed_time"] = 0;
-        // Increase the position
-        api["now_playing_position"]++;
-        // Refresh our stats
-        api["current_video_duration"] =
-          api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
-        api["now_playing_video_info"] =
-          api["video_in_queue"][api["now_playing_position"] - 1];
-        // If we reach the end of the playlist then reset counters and replay with shuffle
-        if (
-          api["now_playing_position"] > api["total_videos"] ||
-          api["now_playing_position"] < 1
-        ) {
-          api["now_playing_position"] = 1;
-          clearInterval(refresh);
-          liveServer();
-        }
+  // utils.getSnippet("KypuJGsZ8pQ").then(() => {
+  // The magic of live radio happens here ^^
+  var refresh = setInterval(() => {
+    // Increase elapsed time by one second
+    api["elapsed_time"]++;
+    // If elapsed time exceeds current video duration then change to the next song
+    if (api["elapsed_time"] >= api["current_video_duration"]) {
+      // Reset the elapsed time counter
+      api["elapsed_time"] = 0;
+      // Increase the position
+      api["now_playing_position"]++;
+      // Refresh our stats
+      api["current_video_duration"] =
+        api["video_in_queue"][api["now_playing_position"] - 1].video_duration;
+      api["now_playing_video_info"] =
+        api["video_in_queue"][api["now_playing_position"] - 1];
+      // If we reach the end of the playlist then reset counters and replay with shuffle
+      if (
+        api["now_playing_position"] > api["total_videos"] ||
+        api["now_playing_position"] < 1
+      ) {
+        api["now_playing_position"] = 1;
+        clearInterval(refresh);
+        liveServer();
       }
-    }, 1000);
-  });
+    }
+  }, 1000);
+  // });
 
   // Users watching counter
   api["users_watching"] = 0;
