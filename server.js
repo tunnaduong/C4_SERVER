@@ -29,6 +29,9 @@ server.listen(server_port, server_host, function () {
     server_port
   );
 });
+require("dns").lookup(require("os").hostname(), function (err, add, fam) {
+  console.log("addr: " + add);
+});
 
 async function liveServer(params) {
   // Getting idle videos info from PHP server
